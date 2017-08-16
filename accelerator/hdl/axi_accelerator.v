@@ -23,7 +23,9 @@ module axi_accelerator(/*AUTOARG*/
    s_axi_awcache, s_axi_awlock, s_axi_awlen, s_axi_awprot,
    s_axi_awqos, s_axi_awsize, s_axi_awvalid, s_axi_bready,
    s_axi_rready, s_axi_wid, s_axi_wdata, s_axi_wlast, s_axi_wstrb,
-   s_axi_wvalid
+   s_axi_wvalid,
+   // Inouts
+   gpio_p, gpio_n
    );
    
    //########################################################
@@ -124,6 +126,10 @@ module axi_accelerator(/*AUTOARG*/
    input 	      s_axi_wvalid;
    output 	      s_axi_wready;
    
+   // 7020 GPIO ports
+   inout[23:0] 	      gpio_p;
+   inout[23:0] 	      gpio_n;
+   
    //########################################################
    // BODY
    //########################################################
@@ -175,7 +181,9 @@ module axi_accelerator(/*AUTOARG*/
 			    .s_wr_packet	(s_wr_packet[PW-1:0]),
 			    .s_rd_access	(s_rd_access),
 			    .s_rd_packet	(s_rd_packet[PW-1:0]),
-			    .s_rr_wait		(s_rr_wait));
+			    .s_rr_wait		(s_rr_wait),
+			    .gpio_p         (gpio_p),
+			    .gpio_n         (gpio_n));
    
 
    //########################################################
@@ -310,4 +318,3 @@ endmodule // elink
 // Local Variables:
 // verilog-library-directories:("." "../../axi/hdl")
 // End:
-

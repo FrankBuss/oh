@@ -5,7 +5,9 @@ module accelerator (/*AUTOARG*/
    s_wr_wait, s_rd_wait, s_rr_access, s_rr_packet,
    // Inputs
    clk, nreset, m_wr_wait, m_rd_wait, m_rr_access, m_rr_packet,
-   s_wr_access, s_wr_packet, s_rd_access, s_rd_packet, s_rr_wait
+   s_wr_access, s_wr_packet, s_rd_access, s_rd_packet, s_rr_wait,
+   // Inouts
+   gpio_p, gpio_n
    );   
 
    //##############################################################
@@ -57,6 +59,10 @@ module accelerator (/*AUTOARG*/
    output [PW-1:0] s_rr_packet;
    input 	   s_rr_wait;
 
+   // 7020 GPIO ports
+   inout[23:0] 	      gpio_p;
+   inout[23:0] 	      gpio_n;
+
    //##############################################################
    //#BODY
    //###############################################################
@@ -67,6 +73,7 @@ module accelerator (/*AUTOARG*/
    wire [31:0] 	   result;
    reg [31:0] 	   reg_input0;
    reg [31:0] 	   reg_input1;
+   reg [23:0] 	   gpio_out;
    
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
@@ -118,10 +125,16 @@ module accelerator (/*AUTOARG*/
    assign input0_match  = acc_match & (dstaddr_in[RFAW+1:2]==`REG_INPUT0);
    assign input1_match  = acc_match & (dstaddr_in[RFAW+1:2]==`REG_INPUT1);
    assign output_match  = acc_match & (dstaddr_in[RFAW+1:2]==`REG_OUTPUT);
+   assign gpio_out_match = acc_match & (dstaddr_in[RFAW+1:2]==`REG_GPIO_OUT);
+   assign gpio_in_match = acc_match & (dstaddr_in[RFAW+1:2]==`REG_GPIO_IN);
    
    assign input0_write  = input0_match  &  write_in;
    assign input1_write  = input1_match  &  write_in;
    assign output_read   = output_match  & ~write_in;
+   assign gpio_out_write = gpio_out_match & write_in;
+   assign gpio_in_read = gpio_in_match & ~write_in;
+   
+   assign gpio_p = gpio_out;
 
    //input0
    always @ (posedge clk)
@@ -132,6 +145,11 @@ module accelerator (/*AUTOARG*/
    always @ (posedge clk)
      if(input1_write)
        reg_input1[31:0] <= data_in[31:0];
+
+   //gpio_out
+   always @ (posedge clk)
+     if(gpio_out_write)
+       gpio_out[23:0] <= data_in[23:0];
 
   
    //#############################
@@ -149,10 +167,13 @@ module accelerator (/*AUTOARG*/
      if(~nreset)
        s_rr_access    <= 'b0;   
      else
-       s_rr_access  <= output_read;
+       s_rr_access  <= output_read | gpio_in_read;
    
    always @ (posedge clk)
-     data_out[31:0] <= result[31:0];	
+     if (output_read)
+       data_out[31:0] <= result[31:0];
+     else if (gpio_in_read)
+       data_out[31:0] <= gpio_n;
 
    emesh2packet #(.AW(32))
    p2e (.packet_out			(s_rr_packet[PW-1:0]),
