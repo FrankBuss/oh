@@ -10,7 +10,16 @@
 //#           3.) The "embox_not_empty" is a "level" interrupt signal
 //#
 //#####################################################################
-`include "emailbox_regmap.v" // is there a better way?
+
+// include doesn't work in Vivado 2017
+//`include "emailbox_regmap.v" // is there a better way?
+
+`define E_MAILBOXLO    6'hC
+`define E_MAILBOXHI    6'hD
+`define E_MAILBOXSTAT  6'hE
+`define EGROUP_MMR     4'hF
+`define EGROUP_MESH    3'h7
+
 module emailbox (/*AUTOARG*/
    // Outputs
    reg_rdata, mailbox_irq, mailbox_wait,
